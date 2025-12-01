@@ -79,6 +79,17 @@ func main() {
 	server := rest.MustNewServer(c.RestConf)
 	defer server.Stop()
 
+	// Add CORS middleware (must be first to handle preflight requests)
+	// Allow only http://localhost:3000 for development
+	corsMiddleware := middleware.NewCorsMiddlewareWithOrigins([]string{
+		"http://localhost:3000",
+	})
+	server.Use(corsMiddleware.Handle)
+
+	// Add request/response logging middleware (log to terminal)
+	requestLogMiddleware := middleware.NewRequestLogMiddleware()
+	server.Use(requestLogMiddleware.Handle)
+
 	// Add error logging middleware
 	errorLogMiddleware := middleware.NewErrorLogMiddleware()
 	server.Use(errorLogMiddleware.Handle)
