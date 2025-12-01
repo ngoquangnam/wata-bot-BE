@@ -1,0 +1,28 @@
+Name: wata-bot-api-dev
+Host: 0.0.0.0
+Port: 8888
+
+# JWT Secret Key (dev environment)
+JWTSecret: dev-secret-key-change-in-production
+
+# Database configuration (dev)
+Database:
+  DataSource: wata_bot_app:RcR6gdqnSZj8E@tcp(localhost:3307)/wata_bot?charset=utf8mb4&parseTime=true&loc=Asia%2FHo_Chi_Minh
+
+# Cache configuration (disabled)
+Cache:
+  - Host: localhost:6379
+    Type: node
+    Pass: secret_redis
+    DB: 0
+
+# Log settings (dev - more verbose)
+Log:
+  ServiceName: wata-bot-api-dev
+  Mode: file
+  Path: logs/dev
+  Level: debug
+  Compress: false
+  KeepDays: 3
+  StackCooldownMillis: 100
+

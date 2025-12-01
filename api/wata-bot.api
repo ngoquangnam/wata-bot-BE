@@ -1,0 +1,59 @@
+syntax = "v1"
+
+info (
+	title: "Wata Bot API"
+	desc: "Wata Bot Backend API"
+	version: "1.0"
+)
+
+type (
+	// Request
+	HelloReq {
+		Name string `json:"name,optional"`
+	}
+
+	// Response
+	HelloResp {
+		Message string `json:"message"`
+	}
+
+	// Wallet Auth Request
+	WalletAuthReq {
+		Signature  string `json:"signature"`
+		Message    string `json:"message"`
+		InviteCode string `json:"invite_code"`
+	}
+
+	// Wallet Auth Not Sign Request
+	WalletAuthNotSignReq {
+		Address    string `json:"address"`
+		InviteCode string `json:"invite_code"`
+	}
+
+	// Wallet Auth Response Data
+	WalletAuthData {
+		AccessToken  string `json:"access_token"`
+		RefreshToken string `json:"refresh_token"`
+		ExpiresIn    int64  `json:"expires_in"`
+		AibReward    int    `json:"aib_reward"`
+		Role         string `json:"role"`
+	}
+
+	// Wallet Auth Response
+	WalletAuthResp {
+		Message string         `json:"message"`
+		Data    WalletAuthData `json:"data"`
+	}
+)
+
+service wata-bot-api {
+	@handler HelloHandler
+	get /api/hello (HelloReq) returns (HelloResp)
+
+	@handler WalletAuthHandler
+	post /auth/wallet (WalletAuthReq) returns (WalletAuthResp)
+
+	@handler WalletAuthNotSignHandler
+	post /auth/wallet-not-sign (WalletAuthNotSignReq) returns (WalletAuthResp)
+}
+

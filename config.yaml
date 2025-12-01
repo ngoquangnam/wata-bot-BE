@@ -1,0 +1,14 @@
+Name: wata-bot-api
+Host: 0.0.0.0
+Port: 8888
+
+# Log settings
+Log:
+  ServiceName: wata-bot-api
+  Mode: file
+  Path: logs
+  Level: info
+  Compress: true
+  KeepDays: 7
+  StackCooldownMillis: 100
+
