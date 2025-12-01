@@ -26,8 +26,8 @@ type (
 
 	// Wallet Auth Not Sign Request
 	WalletAuthNotSignReq {
-		Address    string `json:"address"`
-		InviteCode string `json:"invite_code"`
+		Address      string `json:"address"`
+		ReferralCode string `json:"referral_code"`
 	}
 
 	// Wallet Auth Response Data
@@ -35,7 +35,7 @@ type (
 		AccessToken  string `json:"access_token"`
 		RefreshToken string `json:"refresh_token"`
 		ExpiresIn    int64  `json:"expires_in"`
-		AibReward    int    `json:"aib_reward"`
+		WataReward   int    `json:"wata_reward"`
 		Role         string `json:"role"`
 	}
 

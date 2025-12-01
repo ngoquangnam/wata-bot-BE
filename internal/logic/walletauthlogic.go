@@ -65,23 +65,21 @@ func (l *WalletAuthLogic) WalletAuth(req *types.WalletAuthReq) (resp *types.Wall
 			AccessToken:  accessToken,
 			RefreshToken: refreshToken,
 			ExpiresIn:    expiresIn,
-			AibReward:    user.AibReward,
+			WataReward:   user.WataReward,
 			Role:         user.Role,
 		},
 	}, nil
 }
 
 func (l *WalletAuthLogic) WalletAuthNotSign(req *types.WalletAuthNotSignReq) (resp *types.WalletAuthResp, err error) {
-	// Validate and normalize address format
-	addressStr := strings.TrimSpace(req.Address)
-	addressStr = strings.TrimPrefix(addressStr, "0x")
+	// Validate and normalize address using go-ethereum
+	addressStr, err := l.validateAndNormalizeAddress(req.Address)
+	if err != nil {
+		return nil, err
+	}
 
-	// Convert to checksum address (HexToAddress will add 0x prefix)
-	address := common.HexToAddress("0x" + addressStr)
-	addressStr = address.Hex()
-
-	// Get or create user (allow registration if not found)
-	user, err := l.getOrCreateUser(addressStr, req.InviteCode)
+	// Get or create user with referral_code from request (allow registration if not found)
+	user, err := l.getOrCreateUserWithReferralCode(addressStr, req.ReferralCode)
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +98,7 @@ func (l *WalletAuthLogic) WalletAuthNotSign(req *types.WalletAuthNotSignReq) (re
 			AccessToken:  accessToken,
 			RefreshToken: refreshToken,
 			ExpiresIn:    expiresIn,
-			AibReward:    user.AibReward,
+			WataReward:   user.WataReward,
 			Role:         user.Role,
 		},
 	}, nil
@@ -120,13 +118,10 @@ func (l *WalletAuthLogic) getOrCreateUser(addressStr, inviteCode string) (*model
 
 	// If user not found, create new user (allow registration)
 	if err == model.ErrNotFound {
-		// New user registration
+		// New user registration - only save address and referral_code
 		newUser := &model.User{
 			Address:      addressStr,
 			ReferralCode: referralCode,
-			InviteCode:   inviteCode,
-			AibReward:    50,
-			Role:         "user",
 		}
 		_, err = l.svcCtx.UserModel.Insert(newUser)
 		if err != nil {
@@ -159,27 +154,139 @@ func (l *WalletAuthLogic) getOrCreateUser(addressStr, inviteCode string) (*model
 			user = &model.User{
 				Address:      addressStr,
 				ReferralCode: referralCode,
-				InviteCode:   inviteCode,
-				AibReward:    50,
+				WataReward:   0,
 				Role:         "user",
 			}
 			l.logger.Infof("Using constructed user object for address: %s (insert succeeded but query failed)", addressStr)
 		}
 		l.logger.Infof("New user registered: %s", addressStr)
-	} else {
-		// Existing user - update invite code if provided and not set
-		if inviteCode != "" && user.InviteCode == "" {
-			user.InviteCode = inviteCode
-			err = l.svcCtx.UserModel.Update(user)
-			if err != nil {
-				l.logger.Errorf("Failed to update user: %v", err)
-				utils.WriteErrorLog("Failed to update user invite code", err)
-				// Continue anyway, not critical
+	}
+	// Note: No longer updating invite_code for existing users
+
+	return user, nil
+}
+
+// getOrCreateUserWithReferralCode gets existing user or creates new one with referral_code from request
+func (l *WalletAuthLogic) getOrCreateUserWithReferralCode(addressStr, referralCode string) (*model.User, error) {
+	// Validate and normalize referral_code
+	referralCode = strings.TrimSpace(referralCode)
+	referralCode = strings.ToUpper(referralCode)
+
+	// If referral_code is empty, generate from address
+	if referralCode == "" {
+		referralCode = strings.ToUpper(addressStr[len(addressStr)-8:])
+	}
+
+	// Check if user exists
+	user, err := l.svcCtx.UserModel.FindOneByAddress(addressStr)
+	if err != nil && err != model.ErrNotFound {
+		l.logger.Errorf("Database error: %v", err)
+		utils.WriteErrorLog("Database error when finding user by address", err)
+		return nil, model.NewAPIError(model.ErrCodeDatabaseError, model.ErrMsgDatabaseError)
+	}
+
+	// If user not found, create new user (allow registration)
+	if err == model.ErrNotFound {
+		// New user registration - only save address and referral_code
+		newUser := &model.User{
+			Address:      addressStr,
+			ReferralCode: referralCode,
+		}
+		_, err = l.svcCtx.UserModel.Insert(newUser)
+		if err != nil {
+			l.logger.Errorf("Failed to create user: %v", err)
+			utils.WriteErrorLog("Failed to create user", err)
+			return nil, model.NewAPIError(model.ErrCodeFailedToCreateUser, model.ErrMsgFailedToCreateUser)
+		}
+
+		// Retrieve the newly created user with retry (for cache consistency)
+		// Retry up to 3 times with small delay between attempts
+		maxRetries := 3
+		for i := 0; i < maxRetries; i++ {
+			user, err = l.svcCtx.UserModel.FindOneByAddress(addressStr)
+			if err == nil {
+				break
+			}
+			if i < maxRetries-1 {
+				// Small delay before retry (for cache consistency)
+				time.Sleep(50 * time.Millisecond)
 			}
 		}
+
+		// If still not found after retries, this is an edge case (cache not updated yet)
+		// Since Insert succeeded, we can construct user object to continue
+		if err != nil {
+			l.logger.Errorf("Failed to find created user after insert and retries (address: %s): %v", addressStr, err)
+			utils.WriteErrorLog("Failed to find created user after insert", err)
+			// User was created successfully, so we construct user object to continue
+			// This handles edge case where cache hasn't updated yet but DB insert succeeded
+			user = &model.User{
+				Address:      addressStr,
+				ReferralCode: referralCode,
+				WataReward:   0,
+				Role:         "user",
+			}
+			l.logger.Infof("Using constructed user object for address: %s (insert succeeded but query failed)", addressStr)
+		}
+		l.logger.Infof("New user registered: %s with referral_code: %s", addressStr, referralCode)
 	}
 
 	return user, nil
+}
+
+// validateAndNormalizeAddress validates and normalizes Ethereum address using go-ethereum
+func (l *WalletAuthLogic) validateAndNormalizeAddress(addressInput string) (string, error) {
+	// Trim whitespace
+	addressInput = strings.TrimSpace(addressInput)
+	if addressInput == "" {
+		l.logger.Errorf("Empty address provided")
+		utils.WriteErrorLog("Empty address", fmt.Errorf("address is empty"))
+		return "", model.NewAPIError(model.ErrCodeInvalidAddressFormat, model.ErrMsgInvalidAddressFormat)
+	}
+
+	// Basic format validation: must start with 0x
+	if !strings.HasPrefix(strings.ToLower(addressInput), "0x") {
+		l.logger.Errorf("Invalid address format: %s (missing 0x prefix)", addressInput)
+		utils.WriteErrorLog("Invalid address format", fmt.Errorf("address missing 0x prefix: %s", addressInput))
+		return "", model.NewAPIError(model.ErrCodeInvalidAddressFormat, model.ErrMsgInvalidAddressFormat)
+	}
+
+	// Normalize to lowercase for format check
+	addressLower := strings.ToLower(addressInput)
+
+	// Validate hex characters (after 0x prefix)
+	hexPart := addressLower[2:]
+	for _, char := range hexPart {
+		if !((char >= '0' && char <= '9') || (char >= 'a' && char <= 'f')) {
+			l.logger.Errorf("Invalid address format: %s (contains invalid hex characters)", addressInput)
+			utils.WriteErrorLog("Invalid address format", fmt.Errorf("address contains invalid hex characters"))
+			return "", model.NewAPIError(model.ErrCodeInvalidAddressFormat, model.ErrMsgInvalidAddressFormat)
+		}
+	}
+
+	// Use go-ethereum's HexToAddress to parse and validate
+	// HexToAddress accepts both checksum and lowercase addresses
+	address := common.HexToAddress(addressInput)
+
+	// Check if address is zero address (0x0000...)
+	zeroAddress := common.HexToAddress("0x0")
+	if address == zeroAddress {
+		l.logger.Errorf("Zero address not allowed: %s", addressInput)
+		utils.WriteErrorLog("Zero address", fmt.Errorf("zero address is not allowed"))
+		return "", model.NewAPIError(model.ErrCodeInvalidAddressFormat, model.ErrMsgInvalidAddressFormat)
+	}
+
+	// Return checksum address (Hex() returns EIP-55 checksummed address)
+	normalizedAddress := address.Hex()
+
+	// Verify the normalized address is valid (should always be 42 chars)
+	if len(normalizedAddress) != 42 {
+		l.logger.Errorf("Invalid address normalization: %s -> %s", addressInput, normalizedAddress)
+		utils.WriteErrorLog("Invalid address normalization", fmt.Errorf("normalized address has invalid length"))
+		return "", model.NewAPIError(model.ErrCodeInvalidAddressFormat, model.ErrMsgInvalidAddressFormat)
+	}
+
+	return normalizedAddress, nil
 }
 
 // verifySignature verifies the Ethereum signature

@@ -47,7 +47,7 @@ Invoke-RestMethod -Uri "http://localhost:8888/auth/wallet-not-sign" `
     "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
     "refresh_token": "base64_encoded_token...",
     "expires_in": 31536000,
-    "aib_reward": 50,
+    "wata_reward": 50,
     "role": "user"
   }
 }

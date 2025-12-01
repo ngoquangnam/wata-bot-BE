@@ -143,7 +143,7 @@ Response:
     "access_token": "eyJhbGci...",
     "refresh_token": "...",
     "expires_in": 31536000,
-    "aib_reward": 50,
+    "wata_reward": 50,
     "role": "user"
   }
 }

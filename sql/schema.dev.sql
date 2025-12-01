@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS `user` (
   `address` VARCHAR(42) NOT NULL COMMENT 'Wallet address',
   `referral_code` VARCHAR(8) NOT NULL COMMENT 'Referral code',
   `invite_code` VARCHAR(42) DEFAULT NULL COMMENT 'Invite code used',
-  `aib_reward` INT NOT NULL DEFAULT 50 COMMENT 'AIB reward points',
+  `wata_reward` INT NOT NULL DEFAULT 0 COMMENT 'WATA reward points',
   `role` VARCHAR(20) NOT NULL DEFAULT 'user' COMMENT 'User role',
   `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Created time',
   `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Updated time',

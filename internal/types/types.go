@@ -16,15 +16,15 @@ type WalletAuthReq struct {
 }
 
 type WalletAuthNotSignReq struct {
-	Address    string `json:"address"`
-	InviteCode string `json:"invite_code"`
+	Address      string `json:"address"`
+	ReferralCode string `json:"referral_code"`
 }
 
 type WalletAuthData struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
 	ExpiresIn    int64  `json:"expires_in"`
-	AibReward    int    `json:"aib_reward"`
+	WataReward   int    `json:"wata_reward"`
 	Role         string `json:"role"`
 }
 
