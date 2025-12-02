@@ -1,0 +1,320 @@
+name: Wata Bot Backend Automated Deployment
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  GO_VERSION: '1.24'
+  IP_ADDRESS: '165.232.166.214'
+  DEPLOY_PATH: '/opt/wata-bot'
+  DEPLOY_USER: 'wata-bot'
+
+jobs:
+  test-connection:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test SSH Connection
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{env.IP_ADDRESS}}
+          username: 'root'
+          key: ${{ secrets.SSH_KEY }}
+          port: '22'
+          script: "echo 'SSH connection successful'"
+
+  build-binary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{env.GO_VERSION}}
+
+      - name: Verify Go version
+        run: go version
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Build binary for Linux
+        run: |
+          echo "Building Go binary for Linux..."
+          GOOS=linux GOARCH=amd64 go build -o wata-bot wata-bot.go
+          ls -lh wata-bot
+          file wata-bot
+
+      - name: Verify binary
+        run: |
+          if [ ! -f wata-bot ]; then
+            echo "Error: Binary file not found"
+            exit 1
+          fi
+          echo "Binary file info:"
+          file wata-bot
+          ls -lh wata-bot
+
+      - name: Create production config file
+        run: |
+          mkdir -p etc
+          cat > etc/wata-bot-api.prod.yaml <<EOF
+          Name: wata-bot-api
+          Host: 127.0.0.1
+          Port: 8888
+          
+          # JWT Secret Key
+          JWTSecret: ${{ secrets.JWT_SECRET || 'your-secret-key-change-in-production' }}
+          
+          # Database configuration
+          Database:
+            DataSource: ${{ secrets.DB_USER || 'wata_bot_app' }}:${{ secrets.DB_PASSWORD }}@tcp(localhost:3306)/wata_bot?charset=utf8mb4&parseTime=true&loc=Asia%2FHo_Chi_Minh
+          
+          # Cache configuration (disabled)
+          Cache:
+            - Host: localhost:6379
+              Type: node
+              Pass: ""
+              DB: 0
+          
+          # Log settings
+          Log:
+            ServiceName: wata-bot-api
+            Mode: file
+            Path: /opt/wata-bot/logs
+            Level: info
+            Compress: true
+            KeepDays: 30
+            StackCooldownMillis: 100
+          EOF
+          echo "Production config file created:"
+          cat etc/wata-bot-api.prod.yaml | sed 's/Password:.*/Password: ***HIDDEN***/'
+
+      - name: Create deployment archive
+        run: |
+          echo "Creating deployment archive..."
+          mkdir -p deployment
+          cp wata-bot deployment/
+          cp -r etc deployment/
+          cd deployment
+          tar -czf "../${GITHUB_SHA}.tar.gz" .
+          cd ..
+          echo "Archive created: ${GITHUB_SHA}.tar.gz"
+          ls -lh "${GITHUB_SHA}.tar.gz"
+
+      - name: Store deployment artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: wata-bot-backend-artifacts
+          path: ./${{ github.sha }}.tar.gz
+          retention-days: 7
+
+  prepare-release-on-server:
+    needs: build-binary
+    name: 'Prepare release on server'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: wata-bot-backend-artifacts
+          path: ./
+
+      - name: Verify downloaded artifacts
+        run: |
+          echo "Downloaded files:"
+          ls -la
+          echo "Looking for tar.gz files:"
+          find . -name "*.tar.gz" -type f
+
+      - name: Upload artifacts to server
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{env.IP_ADDRESS}}
+          port: '22'
+          username: 'root'
+          timeout: 120s
+          key: ${{ secrets.SSH_KEY }}
+          source: ${{ github.sha }}.tar.gz
+          target: ${{env.DEPLOY_PATH}}/artifacts
+
+      - name: Create release directory and extract
+        uses: appleboy/ssh-action@master
+        env:
+          GITHUB_SHA: ${{ github.sha }}
+          DEPLOY_PATH: ${{env.DEPLOY_PATH}}
+        with:
+          host: ${{env.IP_ADDRESS}}
+          username: 'root'
+          key: ${{ secrets.SSH_KEY }}
+          timeout: 60s
+          port: '22'
+          envs: GITHUB_SHA,DEPLOY_PATH
+          script: |
+            mkdir -p "${DEPLOY_PATH}/releases/${GITHUB_SHA}"
+            tar xzf "${DEPLOY_PATH}/artifacts/${GITHUB_SHA}.tar.gz" -C "${DEPLOY_PATH}/releases/${GITHUB_SHA}"
+            rm -f "${DEPLOY_PATH}/artifacts/${GITHUB_SHA}.tar.gz"
+            echo "Release extracted to: ${DEPLOY_PATH}/releases/${GITHUB_SHA}"
+            ls -la "${DEPLOY_PATH}/releases/${GITHUB_SHA}"
+
+  setup-permissions:
+    name: 'Setup permissions and directories'
+    runs-on: ubuntu-latest
+    needs: prepare-release-on-server
+    steps:
+      - name: Setup permissions and create directories
+        uses: appleboy/ssh-action@master
+        env:
+          GITHUB_SHA: ${{ github.sha }}
+          DEPLOY_PATH: ${{env.DEPLOY_PATH}}
+          DEPLOY_USER: ${{env.DEPLOY_USER}}
+        with:
+          host: ${{env.IP_ADDRESS}}
+          username: 'root'
+          key: ${{ secrets.SSH_KEY }}
+          port: '22'
+          envs: GITHUB_SHA,DEPLOY_PATH,DEPLOY_USER
+          script: |
+            RELEASE_PATH="${DEPLOY_PATH}/releases/${GITHUB_SHA}"
+            
+            # Create logs directory
+            mkdir -p "${RELEASE_PATH}/logs"
+            
+            # Set executable permission on binary
+            chmod +x "${RELEASE_PATH}/wata-bot"
+            
+            # Set ownership to wata-bot user
+            chown -R ${DEPLOY_USER}:${DEPLOY_USER} "${RELEASE_PATH}"
+            
+            # Verify binary
+            echo "Verifying binary:"
+            file "${RELEASE_PATH}/wata-bot"
+            ls -lh "${RELEASE_PATH}/wata-bot"
+            
+            # Verify config file
+            if [ -f "${RELEASE_PATH}/etc/wata-bot-api.prod.yaml" ]; then
+              echo "✓ Config file found"
+            else
+              echo "✗ Config file not found!"
+              exit 1
+            fi
+
+  activate-release:
+    name: 'Activate release'
+    runs-on: ubuntu-latest
+    needs: setup-permissions
+    steps:
+      - name: Activate Release and Restart Service
+        uses: appleboy/ssh-action@master
+        env:
+          RELEASE_PATH: ${{env.DEPLOY_PATH}}/releases/${{ github.sha }}
+          ACTIVE_RELEASE_PATH: ${{env.DEPLOY_PATH}}
+          DEPLOY_USER: ${{env.DEPLOY_USER}}
+        with:
+          host: ${{env.IP_ADDRESS}}
+          username: 'root'
+          key: ${{ secrets.SSH_KEY }}
+          port: '22'
+          envs: RELEASE_PATH,ACTIVE_RELEASE_PATH,DEPLOY_USER
+          script: |
+            # Backup current binary if exists
+            if [ -f "${ACTIVE_RELEASE_PATH}/wata-bot" ]; then
+              cp "${ACTIVE_RELEASE_PATH}/wata-bot" "${ACTIVE_RELEASE_PATH}/wata-bot.backup.$(date +%Y%m%d_%H%M%S)"
+            fi
+            
+            # Copy new release files to active directory
+            echo "Copying files to active directory..."
+            cp "${RELEASE_PATH}/wata-bot" "${ACTIVE_RELEASE_PATH}/"
+            cp -r "${RELEASE_PATH}/etc" "${ACTIVE_RELEASE_PATH}/"
+            
+            # Ensure logs directory exists
+            mkdir -p "${ACTIVE_RELEASE_PATH}/logs"
+            
+            # Set ownership
+            chown -R ${DEPLOY_USER}:${DEPLOY_USER} "${ACTIVE_RELEASE_PATH}"
+            chmod +x "${ACTIVE_RELEASE_PATH}/wata-bot"
+            
+            # Verify files
+            echo "Active directory contents:"
+            ls -la "${ACTIVE_RELEASE_PATH}"
+            echo ""
+            echo "Binary info:"
+            file "${ACTIVE_RELEASE_PATH}/wata-bot"
+            
+            # Restart systemd service
+            echo "Restarting wata-bot service..."
+            systemctl daemon-reload
+            systemctl restart wata-bot
+            
+            # Wait a moment for service to start
+            sleep 3
+            
+            # Check service status
+            systemctl status wata-bot --no-pager -l || true
+            
+            # Verify service is running
+            if systemctl is-active --quiet wata-bot; then
+              echo "✓ Service is running"
+            else
+              echo "✗ Service failed to start"
+              echo "Recent logs:"
+              journalctl -u wata-bot -n 20 --no-pager
+              exit 1
+            fi
+
+  verify-deployment:
+    name: 'Verify deployment'
+    runs-on: ubuntu-latest
+    needs: activate-release
+    steps:
+      - name: Verify deployment
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{env.IP_ADDRESS}}
+          username: 'root'
+          key: ${{ secrets.SSH_KEY }}
+          port: '22'
+          script: |
+            echo "Checking service status..."
+            systemctl status wata-bot --no-pager -l | head -20
+            
+            echo ""
+            echo "Testing API endpoint..."
+            sleep 2
+            curl -f http://localhost:8888/api/hello?name=GitHubActions || echo "API test failed"
+            
+            echo ""
+            echo "Recent service logs:"
+            journalctl -u wata-bot -n 10 --no-pager
+
+  clean-up:
+    name: 'Clean up old versions'
+    runs-on: ubuntu-latest
+    needs: verify-deployment
+    steps:
+      - name: Clean up old releases
+        uses: appleboy/ssh-action@master
+        env:
+          DEPLOY_PATH: ${{env.DEPLOY_PATH}}
+        with:
+          host: ${{env.IP_ADDRESS}}
+          username: 'root'
+          key: ${{ secrets.SSH_KEY }}
+          port: '22'
+          envs: DEPLOY_PATH
+          script: |
+            # Keep last 3 releases, remove older ones
+            cd "${DEPLOY_PATH}/releases" && ls -t -1 | tail -n +4 | xargs rm -rf || true
+            
+            # Clean up artifacts
+            rm -rf "${DEPLOY_PATH}/artifacts"/*
+            
+            # Clean up old backups (keep last 5)
+            cd "${DEPLOY_PATH}" && ls -t wata-bot.backup.* 2>/dev/null | tail -n +6 | xargs rm -f || true
+            
+            echo "Cleanup completed"
+            echo "Remaining releases:"
+            ls -la "${DEPLOY_PATH}/releases" || true
+
