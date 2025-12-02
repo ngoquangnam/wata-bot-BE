@@ -37,3 +37,38 @@ type ErrorResp struct {
 	ErrorCode string `json:"error_code"`
 	Message   string `json:"message"`
 }
+
+type BotMetrics struct {
+	LockupPeriod   string  `json:"lockupPeriod"`
+	ExpectedReturn string  `json:"expectedReturn"`
+	MinInvestment  string  `json:"minInvestment"`
+	MaxInvestment  string  `json:"maxInvestment"`
+	Roi30d         string  `json:"roi30d"`
+	WinRate        string  `json:"winRate"`
+	TradingPair    string  `json:"tradingPair"`
+	TotalTrades    int     `json:"totalTrades"`
+	Pnl30d         float64 `json:"pnl30d"`
+}
+
+type Bot struct {
+	Id                    string     `json:"id"`
+	Name                  string     `json:"name"`
+	IconLetter            string     `json:"iconLetter"`
+	RiskLevel             string     `json:"riskLevel"`
+	DurationDays          int        `json:"durationDays"`
+	ExpectedReturnPercent int        `json:"expectedReturnPercent"`
+	AprDisplay            string     `json:"aprDisplay"`
+	MinInvestment         int        `json:"minInvestment"`
+	MaxInvestment         int        `json:"maxInvestment"`
+	InvestmentRange       string     `json:"investmentRange"`
+	Subscribers           int        `json:"subscribers"`
+	Author                string     `json:"author"`
+	Description           string     `json:"description"`
+	IsActive              bool       `json:"isActive"`
+	Metrics               BotMetrics `json:"metrics"`
+}
+
+type BotsResp struct {
+	Message string `json:"message"`
+	Data    []Bot  `json:"data"`
+}

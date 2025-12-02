@@ -11,6 +11,7 @@ import (
 type ServiceContext struct {
 	Config    config.Config
 	UserModel model.UserModel
+	BotModel  model.BotModel
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
@@ -27,5 +28,6 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	return &ServiceContext{
 		Config:    c,
 		UserModel: model.NewUserModel(sqlConn, cacheConf),
+		BotModel:  model.NewBotModel(sqlConn, cacheConf),
 	}
 }

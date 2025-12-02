@@ -90,7 +90,7 @@ Database:
 ### Development mode (khuyến nghị cho development)
 
 ```bash
-go run wata-bot.go -f etc/wata-bot-api.yaml
+go run wata-bot.go -f etc/wata-bot-api.dev.yaml
 ```
 
 ### Production mode

@@ -1,25 +1,164 @@
-#### API
-1. auth/wallet
-
-
-##### INPUT
-curl 'https://api.aibotiyi.com/auth/wallet' \
-  -H 'content-type: application/json' \
-  --data-raw '{"signature":"0xe571ae6cb9072663d2be468b065871bf7217aed4e8f36c6aab7f3c99dde1656c2005df1232385a797557ae1f4daa6cf1f2dd5425b519f24eb5ae003c2558e21b1b","message":"Please sign this message to confirm your account","invite_code":"0x0000"}'
-##### OUTPUT
-{"message":"success","data":{"access_token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiIweEQ2MDMzMTY4MDVlMzFCOTQyYjg4RGRlNDc2NmZGMDY2REQ2NzM5N0IiLCJleHAiOjE3OTU5NjE1NjIsImp0aSI6IjU5NjkxZGQ0LTA3ZDgtNGYyNS04ZWNkLTA0YmM1YzVlYzBkNiIsImlhdCI6MTc2NDQyNTU2MiwiaXNzIjoicHJvZC1haWJvdC1iYWNrZW5kLWlzc3VlciIsInN1YiI6ImF1dGgiLCJ1c2VyX2lkIjoiMmNjNzUwMDItMDU0Mi00MDAxLThmYWItMzhlNjZlMmJkZTM3IiwiYWRkcmVzcyI6IjB4RDYwMzMxNjgwNWUzMUI5NDJiODhEZGU0NzY2ZkYwNjZERDY3Mzk3QiIsInJlZmVycmFsX2NvZGUiOiJERDY3Mzk3QiIsInJvbGUiOiJ1c2VyIn0.7I-H4iaOfRQBoUYGzrK21Qwiwl0RPipZGRB9XmTUQOk","refresh_token":"jr8S6K33AdUJBTZln9LT9EN1I6qdHq7jHwZ+rIyHklgN4UE+GFOpioj8DPeMDg8ZLkddAhDnjPdlGIwn2byW7A==","expires_in":31536000,"wata_reward":50,"role":"user"}}
-
-
-##### OUTPUT ERROR
-{"error_code":"0001","message":"invalid address format"}
-
-2. auth/wallet-not-sign
-
-#### INPUT
- curl -X POST http://localhost:8888/auth/wallet-not-sign   -H "Content-Type: application/json"   -d '{
-    "address": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
-    "invite_code": "ABC12345"
-  }'
-
-  ##### OUTPUT
-{"message":"success","data":{"access_token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiIweEQ2MDMzMTY4MDVlMzFCOTQyYjg4RGRlNDc2NmZGMDY2REQ2NzM5N0IiLCJleHAiOjE3OTU5NjE1NjIsImp0aSI6IjU5NjkxZGQ0LTA3ZDgtNGYyNS04ZWNkLTA0YmM1YzVlYzBkNiIsImlhdCI6MTc2NDQyNTU2MiwiaXNzIjoicHJvZC1haWJvdC1iYWNrZW5kLWlzc3VlciIsInN1YiI6ImF1dGgiLCJ1c2VyX2lkIjoiMmNjNzUwMDItMDU0Mi00MDAxLThmYWItMzhlNjZlMmJkZTM3IiwiYWRkcmVzcyI6IjB4RDYwMzMxNjgwNWUzMUI5NDJiODhEZGU0NzY2ZkYwNjZERDY3Mzk3QiIsInJlZmVycmFsX2NvZGUiOiJERDY3Mzk3QiIsInJvbGUiOiJ1c2VyIn0.7I-H4iaOfRQBoUYGzrK21Qwiwl0RPipZGRB9XmTUQOk","refresh_token":"jr8S6K33AdUJBTZln9LT9EN1I6qdHq7jHwZ+rIyHklgN4UE+GFOpioj8DPeMDg8ZLkddAhDnjPdlGIwn2byW7A==","expires_in":31536000,"wata_reward":50,"role":"user"}}
+[
+  {
+    "id": "1",
+    "name": "BOT STAR",
+    "iconLetter": "S",
+    "riskLevel": "Very High",
+    "durationDays": 5,
+    "expectedReturnPercent": 15,
+    "aprDisplay": "15% (total over 5 days)",
+    "minInvestment": 10,
+    "maxInvestment": 10000,
+    "investmentRange": "$10 - $10,000",
+    "subscribers": 10422,
+    "author": "IYI Velocity Pro",
+    "description": "Ultra-short 5-day investment package with 15% total return. Perfect for investors seeking quick capital turnover with very high risk.",
+    "isActive": true,
+    "metrics": {
+      "lockupPeriod": "5 days",
+      "expectedReturn": "15%",
+      "minInvestment": "$10",
+      "maxInvestment": "$10,000",
+      "roi30d": "16.49%",
+      "winRate": "79.45%",
+      "tradingPair": "BTCUSDT",
+      "totalTrades": 949,
+      "pnl30d": 122840.71
+    }
+  },
+  {
+    "id": "2",
+    "name": "BOT MINER",
+    "iconLetter": "M",
+    "riskLevel": "Very High",
+    "durationDays": 15,
+    "expectedReturnPercent": 25,
+    "aprDisplay": "25% (total over 15 days)",
+    "minInvestment": 10,
+    "maxInvestment": 10000,
+    "investmentRange": "$10 - $10,000",
+    "subscribers": 8921,
+    "author": "IYI Velocity Pro",
+    "description": "15-day mid-term package offering 25% total profit. Balanced duration and attractive returns.",
+    "isActive": true,
+    "metrics": {
+      "lockupPeriod": "15 days",
+      "expectedReturn": "25%",
+      "minInvestment": "$10",
+      "maxInvestment": "$10,000",
+      "roi30d": "26.12%",
+      "winRate": "81.23%",
+      "tradingPair": "BTCUSDT, ETHUSDT",
+      "totalTrades": 1823,
+      "pnl30d": 289451.30
+    }
+  },
+  {
+    "id": "3",
+    "name": "BOT QUANTUM",
+    "iconLetter": "Q",
+    "riskLevel": "Very High",
+    "durationDays": 30,
+    "expectedReturnPercent": 35,
+    "aprDisplay": "35% (total over 30 days)",
+    "minInvestment": 10,
+    "maxInvestment": 10000,
+    "investmentRange": "$10 - $10,000",
+    "subscribers": 7435,
+    "author": "IYI Velocity Pro",
+    "description": "Most popular 30-day package with 35% total return. Optimal profit-to-time ratio.",
+    "isActive": true,
+    "metrics": {
+      "lockupPeriod": "30 days",
+      "expectedReturn": "35%",
+      "minInvestment": "$10",
+      "maxInvestment": "$10,000",
+      "roi30d": "35.87%",
+      "winRate": "83.67%",
+      "tradingPair": "Multi-pair",
+      "totalTrades": 3421,
+      "pnl30d": 567291.44
+    }
+  },
+  {
+    "id": "4",
+    "name": "BOT APOLO",
+    "iconLetter": "A",
+    "riskLevel": "Very High",
+    "durationDays": 60,
+    "expectedReturnPercent": 45,
+    "aprDisplay": "45% (total over 60 days)",
+    "minInvestment": 10,
+    "maxInvestment": 10000,
+    "investmentRange": "$10 - $10,000",
+    "subscribers": 5982,
+    "author": "IYI Velocity Pro",
+    "description": "60-day long-term package delivering 45% total profit. Designed for patient investors.",
+    "isActive": true,
+    "metrics": {
+      "lockupPeriod": "60 days",
+      "expectedReturn": "45%",
+      "minInvestment": "$10",
+      "maxInvestment": "$10,000",
+      "roi30d": "22.5%",
+      "winRate": "85.91%",
+      "tradingPair": "Multi-pair",
+      "totalTrades": 5874,
+      "pnl30d": 892104.12
+    }
+  },
+  {
+    "id": "5",
+    "name": "BOT TITAN",
+    "iconLetter": "T",
+    "riskLevel": "Very High",
+    "durationDays": 90,
+    "expectedReturnPercent": 55,
+    "aprDisplay": "55% (total over 90 days)",
+    "minInvestment": 10,
+    "maxInvestment": 10000,
+    "investmentRange": "$10 - $10,000",
+    "subscribers": 4219,
+    "author": "IYI Velocity Pro",
+    "description": "90-day ultra-long package with massive 55% return. Maximizes long-term profits.",
+    "isActive": true,
+    "metrics": {
+      "lockupPeriod": "90 days",
+      "expectedReturn": "55%",
+      "minInvestment": "$10",
+      "maxInvestment": "$10,000",
+      "roi30d": "18.33%",
+      "winRate": "87.44%",
+      "tradingPair": "Multi-pair",
+      "totalTrades": 8921,
+      "pnl30d": 1234567.89
+    }
+  },
+  {
+    "id": "6",
+    "name": "BOT MAX",
+    "iconLetter": "M",
+    "riskLevel": "Very High",
+    "durationDays": 180,
+    "expectedReturnPercent": 75,
+    "aprDisplay": "75% (total over 180 days)",
+    "minInvestment": 10,
+    "maxInvestment": 10000,
+    "investmentRange": "$10 - $10,000",
+    "subscribers": 3874,
+    "author": "IYI Velocity Pro",
+    "description": "Longest 180-day package with huge 75% total return. Ultimate choice for maximum long-term gains.",
+    "isActive": true,
+    "metrics": {
+      "lockupPeriod": "180 days",
+      "expectedReturn": "75%",
+      "minInvestment": "$10",
+      "maxInvestment": "$10,000",
+      "roi30d": "12.5%",
+      "winRate": "89.12%",
+      "tradingPair": "Multi-pair",
+      "totalTrades": 12451,
+      "pnl30d": 2108421.55
+    }
+  }
+]

@@ -27,6 +27,11 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Path:    "/auth/wallet-not-sign",
 				Handler: WalletAuthNotSignHandler(serverCtx),
 			},
+			{
+				Method:  http.MethodGet,
+				Path:    "/api/bots",
+				Handler: BotsHandler(serverCtx),
+			},
 		},
 	)
 }

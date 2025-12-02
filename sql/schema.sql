@@ -18,3 +18,35 @@ CREATE TABLE IF NOT EXISTS `user` (
   KEY `idx_referral_code` (`referral_code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User table';
 
+-- Create bot table
+CREATE TABLE IF NOT EXISTS `bot` (
+  `id` VARCHAR(20) NOT NULL COMMENT 'Bot ID',
+  `name` VARCHAR(100) NOT NULL COMMENT 'Bot name',
+  `icon_letter` VARCHAR(1) NOT NULL COMMENT 'Icon letter',
+  `risk_level` VARCHAR(50) NOT NULL COMMENT 'Risk level',
+  `duration_days` INT NOT NULL COMMENT 'Duration in days',
+  `expected_return_percent` INT NOT NULL COMMENT 'Expected return percentage',
+  `apr_display` VARCHAR(100) NOT NULL COMMENT 'APR display text',
+  `min_investment` INT NOT NULL COMMENT 'Minimum investment',
+  `max_investment` INT NOT NULL COMMENT 'Maximum investment',
+  `investment_range` VARCHAR(50) NOT NULL COMMENT 'Investment range',
+  `subscribers` INT NOT NULL DEFAULT 0 COMMENT 'Number of subscribers',
+  `author` VARCHAR(100) NOT NULL COMMENT 'Author name',
+  `description` TEXT NOT NULL COMMENT 'Bot description',
+  `is_active` TINYINT(1) NOT NULL DEFAULT 1 COMMENT 'Is bot active',
+  `lockup_period` VARCHAR(50) NOT NULL COMMENT 'Lockup period',
+  `expected_return` VARCHAR(50) NOT NULL COMMENT 'Expected return',
+  `min_investment_display` VARCHAR(50) NOT NULL COMMENT 'Min investment display',
+  `max_investment_display` VARCHAR(50) NOT NULL COMMENT 'Max investment display',
+  `roi30d` VARCHAR(50) NOT NULL COMMENT 'ROI 30 days',
+  `win_rate` VARCHAR(50) NOT NULL COMMENT 'Win rate',
+  `trading_pair` VARCHAR(200) NOT NULL COMMENT 'Trading pair',
+  `total_trades` INT NOT NULL DEFAULT 0 COMMENT 'Total trades',
+  `pnl30d` DECIMAL(20, 2) NOT NULL DEFAULT 0.00 COMMENT 'P&L 30 days',
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Created time',
+  `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Updated time',
+  PRIMARY KEY (`id`),
+  KEY `idx_is_active` (`is_active`),
+  KEY `idx_risk_level` (`risk_level`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Bot table';
+
