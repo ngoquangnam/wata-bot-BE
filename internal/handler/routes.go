@@ -32,6 +32,21 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Path:    "/api/bots",
 				Handler: BotsHandler(serverCtx),
 			},
+			{
+				Method:  http.MethodPost,
+				Path:    "/api/user/bots",
+				Handler: GetUserBotsHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodPost,
+				Path:    "/api/user/bots/subscribe",
+				Handler: SubscribeBotHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodPost,
+				Path:    "/api/user/bots/unsubscribe",
+				Handler: UnsubscribeBotHandler(serverCtx),
+			},
 		},
 	)
 }

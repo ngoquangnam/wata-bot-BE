@@ -167,3 +167,148 @@ curl -X GET https://be.wataros.io/api/bots
 }
 ```
 
+## User Bot Subscription APIs
+
+### Get User's Subscribed Bots
+```bash
+curl -X POST http://localhost:8888/api/user/bots \
+  -H "Content-Type: application/json" \
+  -d '{
+    "address": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"
+  }'
+```
+
+### Subscribe to a Bot
+```bash
+curl -X POST http://localhost:8888/api/user/bots/subscribe \
+  -H "Content-Type: application/json" \
+  -d '{
+    "address": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
+    "bot_id": "1"
+  }'
+```
+
+### Unsubscribe from a Bot
+```bash
+curl -X POST http://localhost:8888/api/user/bots/unsubscribe \
+  -H "Content-Type: application/json" \
+  -d '{
+    "address": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
+    "bot_id": "1"
+  }'
+```
+
+### Pretty Print Response
+```bash
+curl -X POST http://localhost:8888/api/user/bots \
+  -H "Content-Type: application/json" \
+  -d '{
+    "address": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"
+  }' | jq
+```
+
+### Windows PowerShell - Get User Bots
+```powershell
+Invoke-RestMethod -Uri "http://localhost:8888/api/user/bots" `
+  -Method POST `
+  -ContentType "application/json" `
+  -Body '{"address":"0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"}'
+```
+
+### Windows PowerShell - Subscribe
+```powershell
+Invoke-RestMethod -Uri "http://localhost:8888/api/user/bots/subscribe" `
+  -Method POST `
+  -ContentType "application/json" `
+  -Body '{"address":"0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb","bot_id":"1"}'
+```
+
+## Expected Response for Get User Bots
+```json
+{
+  "message": "success",
+  "data": [
+    {
+      "id": "1",
+      "name": "BOT STAR",
+      "iconLetter": "S",
+      "riskLevel": "Very High",
+      "durationDays": 5,
+      "expectedReturnPercent": 15,
+      "aprDisplay": "15% (total over 5 days)",
+      "minInvestment": 10,
+      "maxInvestment": 10000,
+      "investmentRange": "$10 - $10,000",
+      "subscribers": 10423,
+      "author": "IYI Velocity Pro",
+      "description": "Ultra-short 5-day investment package with 15% total return. Perfect for investors seeking quick capital turnover with very high risk.",
+      "isActive": true,
+      "metrics": {
+        "lockupPeriod": "5 days",
+        "expectedReturn": "15%",
+        "minInvestment": "$10",
+        "maxInvestment": "$10,000",
+        "roi30d": "16.49%",
+        "winRate": "79.45%",
+        "tradingPair": "BTCUSDT",
+        "totalTrades": 949,
+        "pnl30d": 122840.71
+      }
+    }
+  ]
+}
+```
+
+## Expected Response for Subscribe/Unsubscribe
+```json
+{
+  "message": "Subscribed successfully",
+  "data": {
+    "id": "1",
+    "name": "BOT STAR",
+    "iconLetter": "S",
+    "riskLevel": "Very High",
+    "durationDays": 5,
+    "expectedReturnPercent": 15,
+    "aprDisplay": "15% (total over 5 days)",
+    "minInvestment": 10,
+    "maxInvestment": 10000,
+    "investmentRange": "$10 - $10,000",
+    "subscribers": 10423,
+    "author": "IYI Velocity Pro",
+    "description": "Ultra-short 5-day investment package with 15% total return. Perfect for investors seeking quick capital turnover with very high risk.",
+    "isActive": true,
+    "metrics": {
+      "lockupPeriod": "5 days",
+      "expectedReturn": "15%",
+      "minInvestment": "$10",
+      "maxInvestment": "$10,000",
+      "roi30d": "16.49%",
+      "winRate": "79.45%",
+      "tradingPair": "BTCUSDT",
+      "totalTrades": 949,
+      "pnl30d": 122840.71
+    }
+  }
+}
+```
+
+### Already Subscribed Response
+```json
+{
+  "message": "Already subscribed",
+  "data": {
+    "id": "1",
+    "name": "BOT STAR",
+    ...
+  }
+}
+```
+
+### Not Subscribed Response (Unsubscribe)
+```json
+{
+  "message": "Not subscribed to this bot"
+}
+```
+

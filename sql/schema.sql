@@ -50,3 +50,18 @@ CREATE TABLE IF NOT EXISTS `bot` (
   KEY `idx_risk_level` (`risk_level`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Bot table';
 
+-- Create user_bot_subscription table
+CREATE TABLE IF NOT EXISTS `user_bot_subscription` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Subscription ID',
+  `user_id` BIGINT UNSIGNED NOT NULL COMMENT 'User ID',
+  `bot_id` VARCHAR(20) NOT NULL COMMENT 'Bot ID',
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Created time',
+  `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Updated time',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_user_bot` (`user_id`, `bot_id`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_bot_id` (`bot_id`),
+  CONSTRAINT `fk_subscription_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_subscription_bot` FOREIGN KEY (`bot_id`) REFERENCES `bot` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User bot subscription table';
+

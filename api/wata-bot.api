@@ -82,6 +82,29 @@ type (
 		Message string `json:"message"`
 		Data    []Bot  `json:"data"`
 	}
+
+	// Subscribe Bot Request
+	SubscribeBotReq {
+		Address string `json:"address"`
+		BotId   string `json:"bot_id"`
+	}
+
+	// Unsubscribe Bot Request
+	UnsubscribeBotReq {
+		Address string `json:"address"`
+		BotId   string `json:"bot_id"`
+	}
+
+	// Get User Bots Request
+	GetUserBotsReq {
+		Address string `json:"address"`
+	}
+
+	// Subscribe Response
+	SubscribeResp {
+		Message string `json:"message"`
+		Data    Bot    `json:"data,optional"`
+	}
 )
 
 service wata-bot-api {
@@ -96,5 +119,14 @@ service wata-bot-api {
 
 	@handler BotsHandler
 	get /api/bots returns (BotsResp)
+
+	@handler GetUserBotsHandler
+	post /api/user/bots (GetUserBotsReq) returns (BotsResp)
+
+	@handler SubscribeBotHandler
+	post /api/user/bots/subscribe (SubscribeBotReq) returns (SubscribeResp)
+
+	@handler UnsubscribeBotHandler
+	post /api/user/bots/unsubscribe (UnsubscribeBotReq) returns (SubscribeResp)
 }
 

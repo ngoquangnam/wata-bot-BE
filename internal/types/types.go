@@ -72,3 +72,22 @@ type BotsResp struct {
 	Message string `json:"message"`
 	Data    []Bot  `json:"data"`
 }
+
+type SubscribeBotReq struct {
+	Address string `json:"address"`
+	BotId   string `json:"bot_id"`
+}
+
+type UnsubscribeBotReq struct {
+	Address string `json:"address"`
+	BotId   string `json:"bot_id"`
+}
+
+type GetUserBotsReq struct {
+	Address string `json:"address"`
+}
+
+type SubscribeResp struct {
+	Message string `json:"message"`
+	Data    *Bot   `json:"data,omitempty"`
+}
