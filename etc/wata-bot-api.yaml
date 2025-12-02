@@ -10,11 +10,11 @@ Database:
   DataSource: wata_bot_app:RcR6gdqnSZj8E@tcp(localhost:3306)/wata_bot?charset=utf8mb4&parseTime=true&loc=Asia%2FHo_Chi_Minh
 
 # Cache configuration (disabled)
-# Cache:
-#   - Host: localhost:6379
-#     Type: node
-#     Pass: ""
-#     DB: 0
+Cache:
+  - Host: localhost:6379
+    Type: node
+    Pass: ""
+    DB: 0
 
 # Log settings
 Log:
