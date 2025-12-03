@@ -33,8 +33,8 @@ type (
 
 	UserBotSubscription struct {
 		Id        int64     `db:"id"`
-		UserId    int64    `db:"user_id"`
-		BotId     string   `db:"bot_id"`
+		UserId    int64     `db:"user_id"`
+		BotId     string    `db:"bot_id"`
 		CreatedAt time.Time `db:"created_at"`
 		UpdatedAt time.Time `db:"updated_at"`
 	}
@@ -121,5 +121,3 @@ func (m *defaultUserBotSubscriptionModel) CountByBotId(botId string) (int64, err
 	err := m.QueryRowNoCache(&count, query, botId)
 	return count, err
 }
-
-
