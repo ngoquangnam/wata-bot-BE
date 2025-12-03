@@ -122,3 +122,4 @@ func (m *defaultUserBotSubscriptionModel) CountByBotId(botId string) (int64, err
 	return count, err
 }
 
+
