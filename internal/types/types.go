@@ -55,7 +55,7 @@ type Bot struct {
 	Name                  string     `json:"name"`
 	IconLetter            string     `json:"iconLetter"`
 	RiskLevel             string     `json:"riskLevel"`
-	DurationDays          int        `json:"durationDays"`
+	DurationDays          []int      `json:"durationDays"`
 	ExpectedReturnPercent int        `json:"expectedReturnPercent"`
 	AprDisplay            string     `json:"aprDisplay"`
 	MinInvestment         int        `json:"minInvestment"`
@@ -74,8 +74,9 @@ type BotsResp struct {
 }
 
 type SubscribeBotReq struct {
-	Address string `json:"address"`
-	BotId   string `json:"bot_id"`
+	Address      string `json:"address"`
+	BotId        string `json:"bot_id"`
+	DurationDays int    `json:"duration_days"`
 }
 
 type UnsubscribeBotReq struct {
@@ -90,4 +91,55 @@ type GetUserBotsReq struct {
 type SubscribeResp struct {
 	Message string `json:"message"`
 	Data    *Bot   `json:"data,omitempty"`
+}
+
+type GetProfileReq struct {
+	Address string `json:"address"`
+}
+
+type UserProfileData struct {
+	Address      string `json:"address"`
+	ReferralCode string `json:"referral_code"`
+	InviteCode   string `json:"invite_code"`
+	WataReward   int    `json:"wata_reward"`
+	WataBalance  string `json:"wata_balance"`
+	UsdtBalance  string `json:"usdt_balance"`
+	Role         string `json:"role"`
+	CreatedAt    string `json:"created_at"`
+	UpdatedAt    string `json:"updated_at"`
+}
+
+type ProfileResp struct {
+	Message string          `json:"message"`
+	Data    UserProfileData `json:"data"`
+}
+
+type DepositReq struct {
+	Address  string `json:"address"`
+	Currency string `json:"currency"`
+	Amount   string `json:"amount"`
+	TxHash   string `json:"tx_hash,omitempty"`
+}
+
+type WithdrawReq struct {
+	Address  string `json:"address"`
+	Currency string `json:"currency"`
+	Amount   string `json:"amount"`
+	TxHash   string `json:"tx_hash,omitempty"`
+}
+
+type TransactionData struct {
+	Type          string `json:"type"`
+	Currency      string `json:"currency"`
+	Amount        string `json:"amount"`
+	BalanceBefore string `json:"balance_before"`
+	BalanceAfter  string `json:"balance_after"`
+	Status        string `json:"status"`
+	TxHash        string `json:"tx_hash,omitempty"`
+	CreatedAt     string `json:"created_at"`
+}
+
+type TransactionResp struct {
+	Message string          `json:"message"`
+	Data    TransactionData `json:"data"`
 }

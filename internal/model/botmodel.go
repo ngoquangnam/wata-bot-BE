@@ -33,7 +33,7 @@ type (
 		Name                 string  `db:"name"`
 		IconLetter           string  `db:"icon_letter"`
 		RiskLevel            string  `db:"risk_level"`
-		DurationDays         int     `db:"duration_days"`
+		DurationDays         string  `db:"duration_days"` // JSON array stored as string
 		ExpectedReturnPercent int    `db:"expected_return_percent"`
 		AprDisplay           string  `db:"apr_display"`
 		MinInvestment        int     `db:"min_investment"`

@@ -3,6 +3,7 @@ package model
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/zeromicro/go-zero/core/stores/cache"
@@ -32,11 +33,12 @@ type (
 	}
 
 	UserBotSubscription struct {
-		Id        int64     `db:"id"`
-		UserId    int64     `db:"user_id"`
-		BotId     string    `db:"bot_id"`
-		CreatedAt time.Time `db:"created_at"`
-		UpdatedAt time.Time `db:"updated_at"`
+		Id          int64     `db:"id"`
+		UserId      int64     `db:"user_id"`
+		BotId       string    `db:"bot_id"`
+		DurationDay string    `db:"duration_day"` // Selected duration day from API (stored as string)
+		CreatedAt   time.Time `db:"created_at"`
+		UpdatedAt   time.Time `db:"updated_at"`
 	}
 )
 
@@ -50,8 +52,17 @@ func NewUserBotSubscriptionModel(conn sqlx.SqlConn, c cache.CacheConf) UserBotSu
 }
 
 func (m *defaultUserBotSubscriptionModel) Insert(data *UserBotSubscription) (sql.Result, error) {
-	query := fmt.Sprintf("insert into %s (`user_id`, `bot_id`) values (?, ?)", m.table)
-	ret, err := m.ExecNoCache(query, data.UserId, data.BotId)
+	// Insert with duration_day column
+	query := fmt.Sprintf("insert into %s (`user_id`, `bot_id`, `duration_day`) values (?, ?, ?)", m.table)
+	ret, err := m.ExecNoCache(query, data.UserId, data.BotId, data.DurationDay)
+	if err != nil {
+		// Fallback: if duration_day column doesn't exist, try insert without it
+		errStr := err.Error()
+		if strings.Contains(errStr, "Unknown column") && strings.Contains(errStr, "duration_day") {
+			fallbackQuery := fmt.Sprintf("insert into %s (`user_id`, `bot_id`) values (?, ?)", m.table)
+			ret, err = m.ExecNoCache(fallbackQuery, data.UserId, data.BotId)
+		}
+	}
 	return ret, err
 }
 

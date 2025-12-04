@@ -13,6 +13,7 @@ type ServiceContext struct {
 	UserModel                model.UserModel
 	BotModel                 model.BotModel
 	UserBotSubscriptionModel model.UserBotSubscriptionModel
+	TransactionModel         model.TransactionModel
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
@@ -31,5 +32,6 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		UserModel:                model.NewUserModel(sqlConn, cacheConf),
 		BotModel:                 model.NewBotModel(sqlConn, cacheConf),
 		UserBotSubscriptionModel: model.NewUserBotSubscriptionModel(sqlConn, cacheConf),
+		TransactionModel:         model.NewTransactionModel(sqlConn, cacheConf),
 	}
 }

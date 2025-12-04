@@ -2,6 +2,7 @@ package logic
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/zeromicro/go-zero/core/logx"
 	"wata-bot-BE/internal/model"
@@ -41,12 +42,25 @@ func (l *BotLogic) Bots() (resp *types.BotsResp, err error) {
 	// Convert database models to API response types
 	bots := make([]types.Bot, 0, len(dbBots))
 	for _, dbBot := range dbBots {
+		// Parse duration_days from JSON string to []int
+		var durationDays []int
+		if dbBot.DurationDays != "" {
+			if err := json.Unmarshal([]byte(dbBot.DurationDays), &durationDays); err != nil {
+				l.logger.Errorf("Failed to parse duration_days for bot %s: %v", dbBot.Id, err)
+				// Default to [5, 15, 30, 60, 90, 180] if parsing fails
+				durationDays = []int{5, 15, 30, 60, 90, 180}
+			}
+		} else {
+			// Default to [5, 15, 30, 60, 90, 180] if empty
+			durationDays = []int{5, 15, 30, 60, 90, 180}
+		}
+
 		bot := types.Bot{
 			Id:                   dbBot.Id,
 			Name:                 dbBot.Name,
 			IconLetter:           dbBot.IconLetter,
 			RiskLevel:            dbBot.RiskLevel,
-			DurationDays:         dbBot.DurationDays,
+			DurationDays:         durationDays,
 			ExpectedReturnPercent: dbBot.ExpectedReturnPercent,
 			AprDisplay:           dbBot.AprDisplay,
 			MinInvestment:        dbBot.MinInvestment,

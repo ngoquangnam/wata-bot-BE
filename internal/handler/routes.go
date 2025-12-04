@@ -47,6 +47,21 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Path:    "/api/user/bots/unsubscribe",
 				Handler: UnsubscribeBotHandler(serverCtx),
 			},
+			{
+				Method:  http.MethodPost,
+				Path:    "/api/user/profile",
+				Handler: GetProfileHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodPost,
+				Path:    "/api/user/deposit",
+				Handler: DepositHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodPost,
+				Path:    "/api/user/withdraw",
+				Handler: WithdrawHandler(serverCtx),
+			},
 		},
 	)
 }

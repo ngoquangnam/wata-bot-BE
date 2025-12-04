@@ -10,6 +10,8 @@ CREATE TABLE IF NOT EXISTS `user` (
   `referral_code` VARCHAR(8) NOT NULL COMMENT 'Referral code',
   `invite_code` VARCHAR(42) DEFAULT NULL COMMENT 'Invite code used',
   `wata_reward` INT NOT NULL DEFAULT 0 COMMENT 'WATA reward points',
+  `wata_balance` VARCHAR(50) NOT NULL DEFAULT '0' COMMENT 'WATA balance',
+  `usdt_balance` VARCHAR(50) NOT NULL DEFAULT '0' COMMENT 'USDT balance',
   `role` VARCHAR(20) NOT NULL DEFAULT 'user' COMMENT 'User role',
   `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Created time',
   `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Updated time',
@@ -55,6 +57,7 @@ CREATE TABLE IF NOT EXISTS `user_bot_subscription` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Subscription ID',
   `user_id` BIGINT UNSIGNED NOT NULL COMMENT 'User ID',
   `bot_id` VARCHAR(20) NOT NULL COMMENT 'Bot ID',
+  `duration_day` VARCHAR(20) NOT NULL COMMENT 'Selected duration day from API',
   `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Created time',
   `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Updated time',
   PRIMARY KEY (`id`),
@@ -64,4 +67,24 @@ CREATE TABLE IF NOT EXISTS `user_bot_subscription` (
   CONSTRAINT `fk_subscription_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_subscription_bot` FOREIGN KEY (`bot_id`) REFERENCES `bot` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User bot subscription table';
+
+-- Create transaction table
+CREATE TABLE IF NOT EXISTS `transaction` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Transaction ID',
+  `user_id` BIGINT UNSIGNED NOT NULL COMMENT 'User ID',
+  `type` VARCHAR(20) NOT NULL COMMENT 'Transaction type: deposit, withdraw',
+  `currency` VARCHAR(10) NOT NULL COMMENT 'Currency: wata, usdt',
+  `amount` VARCHAR(50) NOT NULL COMMENT 'Transaction amount',
+  `balance_before` VARCHAR(50) NOT NULL COMMENT 'Balance before transaction',
+  `balance_after` VARCHAR(50) NOT NULL COMMENT 'Balance after transaction',
+  `status` VARCHAR(20) NOT NULL DEFAULT 'completed' COMMENT 'Transaction status: pending, completed, failed',
+  `tx_hash` VARCHAR(100) DEFAULT NULL COMMENT 'Transaction hash (optional)',
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Created time',
+  `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Updated time',
+  PRIMARY KEY (`id`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_type_currency` (`type`, `currency`),
+  KEY `idx_created_at` (`created_at`),
+  CONSTRAINT `fk_transaction_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Transaction table';
 

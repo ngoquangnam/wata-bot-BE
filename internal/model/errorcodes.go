@@ -15,6 +15,12 @@ const (
 	ErrCodeFailedToCreateUser = "0201"
 	ErrCodeFailedToFindUser   = "0202"
 
+	// Transaction errors (0300-0399)
+	ErrCodeInvalidCurrency       = "0300"
+	ErrCodeInvalidAmount         = "0301"
+	ErrCodeInsufficientBalance   = "0302"
+	ErrCodeFailedToUpdateBalance = "0303"
+
 	// Server errors (0500-0599)
 	ErrCodeInternalServerError = "0500"
 )
@@ -27,5 +33,9 @@ const (
 	ErrMsgDatabaseError         = "database error"
 	ErrMsgFailedToCreateUser    = "failed to create user"
 	ErrMsgFailedToFindUser      = "failed to find user"
+	ErrMsgInvalidCurrency       = "invalid currency. Must be 'wata' or 'usdt'"
+	ErrMsgInvalidAmount         = "invalid amount"
+	ErrMsgInsufficientBalance   = "insufficient balance"
+	ErrMsgFailedToUpdateBalance = "failed to update balance"
 	ErrMsgInternalServerError   = "internal server error"
 )

@@ -2,11 +2,14 @@ package logic
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 
-	"github.com/zeromicro/go-zero/core/logx"
 	"wata-bot-BE/internal/model"
 	"wata-bot-BE/internal/svc"
 	"wata-bot-BE/internal/types"
+
+	"github.com/zeromicro/go-zero/core/logx"
 )
 
 type SubscriptionLogic struct {
@@ -56,30 +59,43 @@ func (l *SubscriptionLogic) GetUserBots(req *types.GetUserBotsReq) (resp *types.
 	for _, sub := range subscriptions {
 		bot, err := l.svcCtx.BotModel.FindOne(sub.BotId)
 		if err != nil {
-		if err == model.ErrNotFound {
-			l.logger.Errorf("Bot %s not found for subscription", sub.BotId)
-			continue
-		}
+			if err == model.ErrNotFound {
+				l.logger.Errorf("Bot %s not found for subscription", sub.BotId)
+				continue
+			}
 			l.logger.Errorf("Failed to find bot %s: %v", sub.BotId, err)
 			continue
 		}
 
+		// Parse duration_days from bot (not from subscription)
+		var durationDays []int
+		if bot.DurationDays != "" {
+			if err := json.Unmarshal([]byte(bot.DurationDays), &durationDays); err != nil {
+				l.logger.Errorf("Failed to parse duration_days for bot %s: %v", bot.Id, err)
+				// Default to [5, 15, 30, 60, 90, 180] if parsing fails
+				durationDays = []int{5, 15, 30, 60, 90, 180}
+			}
+		} else {
+			// Default to [5, 15, 30, 60, 90, 180] if empty
+			durationDays = []int{5, 15, 30, 60, 90, 180}
+		}
+
 		// Convert to API type
 		apiBot := types.Bot{
-			Id:                   bot.Id,
-			Name:                 bot.Name,
-			IconLetter:           bot.IconLetter,
-			RiskLevel:            bot.RiskLevel,
-			DurationDays:         bot.DurationDays,
+			Id:                    bot.Id,
+			Name:                  bot.Name,
+			IconLetter:            bot.IconLetter,
+			RiskLevel:             bot.RiskLevel,
+			DurationDays:          durationDays,
 			ExpectedReturnPercent: bot.ExpectedReturnPercent,
-			AprDisplay:           bot.AprDisplay,
-			MinInvestment:        bot.MinInvestment,
-			MaxInvestment:        bot.MaxInvestment,
-			InvestmentRange:     bot.InvestmentRange,
-			Subscribers:          bot.Subscribers,
-			Author:               bot.Author,
-			Description:          bot.Description,
-			IsActive:             bot.IsActive,
+			AprDisplay:            bot.AprDisplay,
+			MinInvestment:         bot.MinInvestment,
+			MaxInvestment:         bot.MaxInvestment,
+			InvestmentRange:       bot.InvestmentRange,
+			Subscribers:           bot.Subscribers,
+			Author:                bot.Author,
+			Description:           bot.Description,
+			IsActive:              bot.IsActive,
 			Metrics: types.BotMetrics{
 				LockupPeriod:   bot.LockupPeriod,
 				ExpectedReturn: bot.ExpectedReturn,
@@ -123,25 +139,56 @@ func (l *SubscriptionLogic) SubscribeBot(req *types.SubscribeBotReq) (resp *type
 		return nil, model.NewAPIError(model.ErrCodeDatabaseError, model.ErrMsgDatabaseError)
 	}
 
+	// Validate durationDays
+	if req.DurationDays <= 0 {
+		return nil, model.NewAPIError(model.ErrCodeInvalidAmount, "duration_days must be greater than 0")
+	}
+
 	// Check if already subscribed
 	existing, err := l.svcCtx.UserBotSubscriptionModel.FindByUserIdAndBotId(user.Id, req.BotId)
 	if err == nil && existing != nil {
 		// Already subscribed, return success with bot info
-		apiBot := l.convertBotToAPI(bot)
+		// Get duration_days from bot (not from subscription)
+		var durationDays []int
+		if bot.DurationDays != "" {
+			if err := json.Unmarshal([]byte(bot.DurationDays), &durationDays); err != nil {
+				durationDays = []int{5, 15, 30, 60, 90, 180}
+			}
+		} else {
+			durationDays = []int{5, 15, 30, 60, 90, 180}
+		}
+		apiBot := l.convertBotToAPI(bot, durationDays)
 		return &types.SubscribeResp{
 			Message: "Already subscribed",
 			Data:    &apiBot,
 		}, nil
 	}
 
-	// Create subscription
-	subscription := &model.UserBotSubscription{
-		UserId: user.Id,
-		BotId:  req.BotId,
+	// Default duration_days array: [5, 15, 30, 60, 90, 180] (from bot)
+	var durationDaysArray []int
+	if bot.DurationDays != "" {
+		if err := json.Unmarshal([]byte(bot.DurationDays), &durationDaysArray); err != nil {
+			durationDaysArray = []int{5, 15, 30, 60, 90, 180}
+		}
+	} else {
+		durationDaysArray = []int{5, 15, 30, 60, 90, 180}
 	}
+
+	// Create subscription - only store duration_day
+	subscription := &model.UserBotSubscription{
+		UserId:      user.Id,
+		BotId:       req.BotId,
+		DurationDay: fmt.Sprintf("%d", req.DurationDays), // Store the selected duration day from API as string
+	}
+	l.logger.Infof("Creating subscription for user %d, bot %s with duration_day: %s", user.Id, req.BotId, subscription.DurationDay)
 	_, err = l.svcCtx.UserBotSubscriptionModel.Insert(subscription)
 	if err != nil {
-		l.logger.Errorf("Failed to create subscription: %v", err)
+		l.logger.Errorf("Failed to create subscription: %v, error details: %+v, user_id: %d, bot_id: %s, duration_day: %s",
+			err, err, user.Id, req.BotId, subscription.DurationDay)
+		// Log the full error message for debugging
+		if errStr := err.Error(); errStr != "" {
+			l.logger.Errorf("Database error message: %s", errStr)
+		}
 		return nil, model.NewAPIError(model.ErrCodeDatabaseError, "Failed to subscribe to bot")
 	}
 
@@ -151,7 +198,7 @@ func (l *SubscriptionLogic) SubscribeBot(req *types.SubscribeBotReq) (resp *type
 		l.logger.Errorf("Failed to update bot subscriber count: %v", err)
 	}
 
-	apiBot := l.convertBotToAPI(bot)
+	apiBot := l.convertBotToAPI(bot, durationDaysArray)
 	return &types.SubscribeResp{
 		Message: "Subscribed successfully",
 		Data:    &apiBot,
@@ -204,22 +251,22 @@ func (l *SubscriptionLogic) UnsubscribeBot(req *types.UnsubscribeBotReq) (resp *
 	}, nil
 }
 
-func (l *SubscriptionLogic) convertBotToAPI(bot *model.Bot) types.Bot {
+func (l *SubscriptionLogic) convertBotToAPI(bot *model.Bot, durationDays []int) types.Bot {
 	return types.Bot{
-		Id:                   bot.Id,
-		Name:                 bot.Name,
-		IconLetter:           bot.IconLetter,
-		RiskLevel:            bot.RiskLevel,
-		DurationDays:         bot.DurationDays,
+		Id:                    bot.Id,
+		Name:                  bot.Name,
+		IconLetter:            bot.IconLetter,
+		RiskLevel:             bot.RiskLevel,
+		DurationDays:          durationDays,
 		ExpectedReturnPercent: bot.ExpectedReturnPercent,
-		AprDisplay:           bot.AprDisplay,
-		MinInvestment:        bot.MinInvestment,
-		MaxInvestment:        bot.MaxInvestment,
-		InvestmentRange:     bot.InvestmentRange,
-		Subscribers:          bot.Subscribers,
-		Author:               bot.Author,
-		Description:          bot.Description,
-		IsActive:             bot.IsActive,
+		AprDisplay:            bot.AprDisplay,
+		MinInvestment:         bot.MinInvestment,
+		MaxInvestment:         bot.MaxInvestment,
+		InvestmentRange:       bot.InvestmentRange,
+		Subscribers:           bot.Subscribers,
+		Author:                bot.Author,
+		Description:           bot.Description,
+		IsActive:              bot.IsActive,
 		Metrics: types.BotMetrics{
 			LockupPeriod:   bot.LockupPeriod,
 			ExpectedReturn: bot.ExpectedReturn,
@@ -233,4 +280,3 @@ func (l *SubscriptionLogic) convertBotToAPI(bot *model.Bot) types.Bot {
 		},
 	}
 }
-

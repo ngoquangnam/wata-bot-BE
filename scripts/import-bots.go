@@ -90,12 +90,25 @@ func main() {
 	errorCount := 0
 
 	for _, botJSON := range botsJSON {
+		// Convert durationDays to JSON array string
+		// Default to [5, 15, 30, 60, 90, 180] if not provided
+		durationDaysArray := []int{5, 15, 30, 60, 90, 180}
+		if botJSON.DurationDays > 0 {
+			// If a single value is provided, use it as the first element
+			durationDaysArray = []int{botJSON.DurationDays}
+		}
+		durationDaysJSON, marshalErr := json.Marshal(durationDaysArray)
+		if marshalErr != nil {
+			log.Printf("Failed to marshal duration_days for bot %s: %v", botJSON.Id, marshalErr)
+			durationDaysJSON = []byte(`[5,15,30,60,90,180]`)
+		}
+
 		bot := &model.Bot{
 			Id:                   botJSON.Id,
 			Name:                 botJSON.Name,
 			IconLetter:           botJSON.IconLetter,
 			RiskLevel:            botJSON.RiskLevel,
-			DurationDays:         botJSON.DurationDays,
+			DurationDays:         string(durationDaysJSON),
 			ExpectedReturnPercent: botJSON.ExpectedReturnPercent,
 			AprDisplay:           botJSON.AprDisplay,
 			MinInvestment:        botJSON.MinInvestment,
